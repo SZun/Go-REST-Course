@@ -1,49 +1,39 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
+	"./controllers"
+	"./driver"
 	"github.com/gorilla/mux"
+	"github.com/subosito/gotenv"
 )
 
-type Book struct {
-	ID     int    `json:"id"`
-	Title  string `json:"title"`
-	Author string `json:"author"`
-	Year   string `json:"year"`
+var db *sql.DB
+
+func init() {
+	gotenv.Load()
 }
 
-var books []Book
+func logFatal(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 func main() {
+	db = driver.ConnectDB()
 	router := mux.NewRouter()
 
-	router.HandleFunc("/books", getBooks).Methods("GET")
-	router.HandleFunc("/books/{id}", getBook).Methods("GET")
-	router.HandleFunc("/books", addBook).Methods("POST")
-	router.HandleFunc("/books", updateBook).Methods("PUT")
-	router.HandleFunc("/books/{id}", deleteBook).Methods("DELETE")
+	controller := controllers.Controller{}
+
+	router.HandleFunc("/books", controller.GetBooks(db)).Methods("GET")
+	router.HandleFunc("/books/{id}", controller.GetBook(db)).Methods("GET")
+	router.HandleFunc("/books", controller.AddBook(db)).Methods("POST")
+	router.HandleFunc("/books", controller.UpdateBook(db)).Methods("PUT")
+	router.HandleFunc("/books/{id}", controller.RemoveBook(db)).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
-}
-
-func getBooks(w http.ResponseWriter, r *http.Request) {
-	log.Println("Get all books is called")
-}
-
-func getBook(w http.ResponseWriter, r *http.Request) {
-	log.Println("Get book is called")
-}
-
-func addBook(w http.ResponseWriter, r *http.Request) {
-	log.Println("Add book is called")
-}
-
-func updateBook(w http.ResponseWriter, r *http.Request) {
-	log.Println("Update book is called")
-}
-
-func deleteBook(w http.ResponseWriter, r *http.Request) {
-	log.Println("Remove book is called")
 }
